@@ -1,0 +1,1247 @@
+
+# Claude Code 终极指南（上）：从记忆系统到多代理架构
+
+`#2026/03/04` `#claude-code` 
+
+>  https://mp.weixin.qq.com/s/wt_s_Mp92ZUeHyvs_StgWA
+
+> https://github.com/affaan-m/everything-claude-code/blob/main/README.zh-CN.md
+
+>  **"Claude Code 不是聊天工具，它是一个操作系统。"**
+
+
+## 目录
+<!-- toc -->
+ ## 本文导航 
+
+| 章节 | 核心主题 | 你能学到什么 |
+| --- | --- | --- |
+| 一 | CLAUDE.md 记忆系统 | 六层记忆体系、规则拆分、动态上下文注入、5 种实战模板、自我进化 |
+| 二 | 上下文工程与 Token 经济学 | Token 优化、模型路由、MCP 成本陷阱、战略压缩、会话管理 |
+| 三 | Plan Mode 与质量驱动开发 | 规划模式、Eval-Driven Development、六阶段验证、双 Claude 互审 |
+| 四 | Skills 与 Hooks：定制你的 Claude | 技能系统、事件钩子、持续学习机制、记忆持久化 |
+| 五 | 多代理架构与并行开发 | Subagents、Agent Teams、Git Worktree、编排流水线 |
+
+## 一、CLAUDE.md：构建你的 AI 记忆系统
+
+90% 的 Claude Code 使用问题，都可以通过一个文件解决——CLAUDE.md。
+
+- `CLAUDE.md` 是 Claude Code 启动时自动读取的记忆文件，是最基础最基础的`上下文`
+- `CLAUDE.md` 
+
+### 1.1 创建方法
+
+| 方法    | 命令        | 适用场景                    |
+| ----- | --------- | ----------------------- |
+| 自动生成  | `/init`   | 快速起步，自动检测技术栈（约 80% 完成度） |
+| 编辑器打开 | `/memory` | 大规模编辑，用你的 IDE 修改        |
+| 快速追加  | `# 规则内容`  | 对话中实时添加单条规则             |
+
+**推荐工作流** ：先跑 `/init` 得到 80% 的底子，然后用 `/memory` 精调
+
+### 1.2 写什么、不写什么——这是大多数人踩的第一个坑
+
+**核心原则：把 `CLAUDE.md` 当成`微调`（fine-tuning），不是当成`架构文档`。** 
+
+简短的指令式规则比长篇大论有效得多
+
+#### **该写的（高价值信息）：**
+
+| 内容         | 为什么重要          | 示例                                     |
+| ---------- | -------------- | -------------------------------------- |
+| 技术栈和框架版本   | 消除 90% 的框架选择错误 | `React 19 + TypeScript 5.9 + Vite`     |
+| 命名规范和代码风格  | 代码一致性提升 70%    | `使用 named export，不用 default export`    |
+| 常用命令       | 避免每次重新解释       | `构建：pnpm build / 测试：pnpm test`         |
+| 测试规则和覆盖率要求 | 首次生成即符合规范      | `新 API 路由必须写测试，覆盖率 > 80%`              |
+| 项目架构和目录结构  | 减少文件搜索时间       | `API 路由在 src/api/，组件在 src/components/` |
+| 典型代码示例     | 风格对齐现有项目       | `参考示例：components/UserCard.tsx`         |
+| 重要约束和禁止项   | 避免反复犯同一个错      | `禁止 console.log 留在生产代码中`               |
+
+#### **不该写的（常见错误）：**
+
+-  **大段的框架官方文档** —— Claude 已经知道 React 怎么用，你不需要教它  
+-  **过长的规则列表** —— 超过 `200 行`就该拆分，否则后面的规则权重会被稀释  
+-  **模糊的描述**
+	- "写好的代码"没有任何信息量，"函数不超过 50 行，嵌套不超过 4 层"才有用  
+-  **`/init` 自动生成的内容不加修改直接用**
+	-  自动生成`只是起点`，需要根据实际项目精调
+-  **每个文件的具体 API 文档**
+	- 这些信息 Claude 可以直接读源码获取，放在 CLAUDE.md 里只会浪费上下文
+
+### 1.3 一份好的 CLAUDE.md 长什么样
+
+这是一个 `Next.js + Supabase + Stripe SaaS 项目`的 CLAUDE.md 示例（来自黑客松冠军仓库的模板）：
+
+```markdown
+# Project: my-saas-app  
+  
+## 技术栈  
+- 前端：Next.js 15 + TypeScript + Tailwind CSS  
+- 后端：Server Components + Server Actions  
+- 数据库：Supabase (PostgreSQL + RLS)  
+- 支付：Stripe  
+- 测试：Vitest + Playwright  
+- 包管理：pnpm  
+  
+## 代码规范  
+- TypeScript strict 模式，禁止 any  
+- 函数式组件 + Hooks，不用 class  
+- 使用 named export，不用 default export  
+- 变量用 const，禁止 var  
+- 不可变数据模式：用 spread 操作符，禁止直接 mutate  
+- 文件 200-400 行为宜，800 行封顶  
+- 函数不超过 50 行，嵌套不超过 4 层  
+  
+## 关键架构约束  
+- 默认使用 Server Components，只在需要交互时用 Client Components  
+- 数据库查询用 select() 显式指定列，总是加 limit()  
+- 所有 RLS 策略必须覆盖 CRUD 四种操作  
+- 服务端用 createServerClient()，客户端用 createBrowserClient()  
+- 价格验证必须在服务端完成，不信任客户端传的价格  
+- 所有用户输入用 Zod 校验  
+  
+## 常用命令  
+- 构建：pnpm build  
+- 测试：pnpm test  
+- 类型检查：pnpm typecheck  
+- E2E 测试：pnpm test:e2e  
+- 开发服务器：pnpm dev  
+  
+## 重要禁止项  
+- 禁止硬编码密钥，所有密钥放环境变量  
+- 禁止 console.log 留在生产代码中  
+- 禁止跳过 RLS（不用 service_role key 做客户端查询）  
+- 禁止在 commit message 中使用 emoji  
+  
+## 参考示例  
+- 组件示例：src/components/UserCard.tsx  
+- API 路由示例：src/app/api/users/route.ts  
+- Server Action 示例：src/app/actions/billing.ts  
+- 测试示例：tests/user.test.ts
+```
+
+注意这个示例的特点：
+
+ - **指令式语言** ，不是描述式的。"禁止 any"比"尽量避免使用 any 类型"更有效
+ - **有具体数字** 。"800 行封顶"比"`文件不要太长`"好 10 倍
+ - **指向模范文件** 。**一个具体的代码示例**，顶一百句描述——Claude 会自动对齐它的风格
+ - **包含 Compact Instructions** 。告诉 Claude 压缩上下文时保留什么、丢弃什么（这点后面详说）
+
+### 1.4 六层记忆体系
+
+大多数人只知道项目根目录的 `CLAUDE.md`，但 Claude Code 的记忆系统实际上有六层，从高到低优先级：
+
+```markdown
+企业策略 (/etc/claude-code/CLAUDE.md) ←  IT 部门部署，全公司统一策略  
+↓  
+项目记忆 (./CLAUDE.md) ← 团队共享，跟随 Git 版本管理  
+↓  
+项目规则 (./.claude/rules/*.md) ← 按主题模块化拆分
+↓  
+用户记忆 (~/.claude/CLAUDE.md) ← 个人偏好，跨所有项目生效  
+↓  
+私有本地 (./CLAUDE.local.md) ← 私有覆盖，自动被 gitignore  
+↓  
+自动记忆 (~/.claude/projects/.../memory/) ← Claude 自己的笔记本
+```
+
+**为什么这很重要？** 因为不同层级的规则冲突时，**高层级会覆盖低层级**。企业策略说 "禁止使用 eval()"，你的项目规则就没法绕过去。
+
+**每层的实际使用场景：**
+
+- **企业策略层**
+	-  大公司 IT 部门用的。比如统一要求"所有项目禁止硬编码 API Key"、"所有仓库必须有 CI 通过才能合并"。个人开发者通常用不到这层。
+- **项目记忆层**
+	-  最核心的一层。放在项目根目录，跟 `Git` 一起管理，团队所有成员共享。上面那个 CLAUDE.md 示例就是这层。
+- **项目规则层** 
+	- 当 CLAUDE.md 膨胀到 200+ 行时，把规则按主题拆分到 `.claude/rules/` 目录下（后面详细讲）。
+- **用户记忆层** 
+	- 放在 `~/.claude/CLAUDE.md` ，跨所有项目生效。适合放你的个人偏好，比如"回复用简体中文"、"使用 2 空格缩进"、"Git commit message 用英文"。
+- **私有本地层** 
+	-  `CLAUDE.local.md` ，不进 Git。适合放你本地的特殊配置，比如"我的数据库在 localhost:5433"。
+- **自动记忆层** 
+	- 这是一个隐藏的宝藏。Claude 会在 `~/.claude/projects/` 对应的 memory 目录里自动记笔记——项目的构建命令、你的代码风格偏好、它自己发现的项目特征。跨会话自动加载，而且你可以手动查看和编辑这些笔记。
+
+### 1.5 规则拆分：当 CLAUDE.md 开始膨胀
+
+当项目复杂到 `CLAUDE.md` 超过 200 行时，继续往里堆规则是个坏主意——**后面的规则权重会被稀释**，Claude 的遵从率会下降。
+
+解法是用 `.claude/rules/` 目录按主题拆分：
+
+```bash
+.claude/  
+└── rules/  
+├── coding-style.md  # 代码风格：命名、格式、文件组织  
+├── testing.md       # 测试规范：TDD 流程、覆盖率要求  
+├── security.md     # 安全规则：密钥管理、输入校验、XSS 防护  
+├── git-workflow.md # Git 工作流：分支策略、commit 格式  
+├── performance.md  # 性能要求：懒加载、缓存策略  
+└── agents.md      # Agent 配置：何时委派给子代理
+```
+
+每个文件都是独立的规则模块，Claude 启动时自动加载全部。
+
+**关键进阶：用 `paths:` frontmatter 限定规则的生效范围。** 比如 API 校验规则只对 API 目录生效：
+
+```bash
+paths:  
+- "src/api/**" 
+
+API 路由必须使用 Zod 校验所有输入参数。  
+所有端点必须返回统一的 { data, error, message } 结构。  
+错误响应必须包含机器可读的 error code。
+```
+
+这样做的好处是：规则更精准，不会干扰无关代码。Claude 处理前端组件时不会被 API 校验规则干扰，处理 API 时又能严格执行校验。
+
+**黑客松冠军 Affaan Mustafa 的实际分法：**
+
+他把规则拆成了这几个维度：
+
+```bash
+.claude/rules/  
+├── security.md # 禁止硬编码密钥、输入校验、XSS 防护  
+├── coding-style.md # 不可变数据、KISS 原则、文件组织  
+├── testing.md # TDD 工作流、80%+ 覆盖率  
+├── git-workflow.md # commit 格式、PR 流程  
+├── agents.md # 何时委派给子代理  
+└── performance.md # 模型选择、上下文管理
+```
+
+每个文件控制在 30-50 行，指令式语言，没有废话。
+
+### 1.6 `@import` 语法与 `#` 快速记忆
+
+**`@import` ：引用其他文件**
+
+CLAUDE.md 可以引用其他文件的内容，支持最多 5 层嵌套：
+
+```markdown
+@README.md  
+@docs/api-conventions.md  
+@~/.claude/my-personal-rules.md
+```
+
+这样你可以把 README 里已经写好的项目说明直接复用，不需要在 CLAUDE.md 里重复一遍。
+
+**`#` 快速记忆：对话中实时追加规则**
+
+在对话中，以 `#` 开头输入内容，Claude 会直接把它追加到 CLAUDE.md 里：
+
+```bash
+# 所有 API 响应必须包装在 { data, error, message } 结构中
+```
+
+> [!danger]
+> 
+> 一回车，就永久记住了。比手动编辑文件快 10 倍。
+> 
+> 这个功能特别适合一种场景：Claude 犯了错，你纠正了它，然后立刻用 `#` 把规则固化下来，确保它不会再犯同样的错。
+
+### 1.7 自我进化的 CLAUDE.md
+
+Boris Cherny 团队的核心技巧：每次 Claude 犯了错被你纠正后，立刻说：
+
+> [!info]
+> "把这条规则更新到 CLAUDE.md 里，确保你下次不会再犯同样的错。"
+
+Boris 原话："**Claude 写给自己的规则，诡异地好用。**" 因为它比任何人都清楚自己会在哪里犯错，所以它写的规则往往比你自己写的更精准。
+
+有团队成员更进一步——每个任务、每次 PR 后都维护一个 notes 目录，从 `CLAUDE.md` 中索引。**久而久之，CLAUDE.md  就变成了一个"活的"项目知识库**。
+
+黑客松冠军仓库把这个`理念`做到了极致——他们实现了一个 **持续学习系统** ，通过 Hooks 自动提取 Claude 的行为模式并写入规则文件（这个系统后面在 Hooks 章节详细展开）。
+
+### 1.8 动态上下文注入
+
+除了静态的 CLAUDE.md，你还可以通过 CLI 动态注入上下文。 **系统提示的权威性高于用户消息** ，所以通过 `--system-prompt` 注入的指令，Claude 会像对待核心规则一样遵守。
+
+黑客松冠军仓库的做法是创建三种"角色上下文"文件，然后用 shell 别名一键切换：
+
+## 创建上下文目录  
+
+mkdir -p ~/.claude/contexts  
+
+## dev.md —— 开发模式：写代码优先，解释其次  
+
+## research.md —— 调研模式：广泛阅读，理解清楚再动手  
+
+## review.md —— 审查模式：仔细阅读，按严重程度排列问题  
+
+## 用别名一键切换角色  
+
+alias claude-dev='claude --system-prompt "$(cat ~/.claude/contexts/dev.md)"'  
+alias claude-review='claude --system-prompt "$(cat ~/.claude/contexts/review.md)"'  
+alias claude-research='claude --system-prompt "$(cat ~/.claude/contexts/research.md)"'
+
+每个上下文文件定义了 Claude 在该角色下的行为偏好：
+
+**`dev.md` （开发模式）：**
+
+你处于开发模式。  
+- 写代码优先，解释其次  
+- 优先让东西跑起来，再优化  
+- 优先级：能跑 → 正确 → 整洁  
+- 偏好工具：Edit, Write, Bash
+
+**`review.md` （审查模式）：**
+
+你处于代码审查模式。  
+- 先彻底阅读再评论  
+- 按严重程度排序发现的问题  
+- 审查清单：逻辑错误、边界情况、错误处理、安全、性能、可读性、测试  
+- 只报告置信度 > 80% 的问题，跳过风格偏好
+
+**`research.md` （调研模式）：**
+
+你处于调研模式。  
+- 广泛阅读后再下结论  
+- 主动提出澄清问题  
+- 流程：理解 → 探索 → 形成假说 → 验证 → 总结  
+- 先给发现，再给建议
+
+这样你就有了三个"人格"的 Claude——写代码、审查代码、做调研各有一套专属配置，不需要每次在提示里重复说明。
+
+1.9 五种实战 CLAUDE.md 模板
+
+黑客松冠军仓库提供了 5 种不同技术栈的 CLAUDE.md 模板，覆盖了最常见的项目类型。这里摘取每种模板的核心要点，你可以按自己的技术栈参考：
+
+**Django REST API 项目：**
+
+**Go 微服务项目：**
+
+ Go 1.22+ / gRPC + REST Gateway / PostgreSQL / sqlc / Wire
+
+ 核心约束：context 作为第一个参数、error 用 `%w` 包装、domain 层 error 映射到 gRPC status
+
+ Clean Architecture 四层：domain → service → repository → handler
+
+**Rust/Axum 服务项目：**
+
+ Rust 1.78+ / Axum / SQLx / Tokio
+
+ 核心约束：生产代码禁止 `.unwrap()` 、用 `?` 操作符、thiserror 用于库、anyhow 用于二进制
+
+ SQLx `query!` 宏做编译期 SQL 校验
+
+**Next.js + Supabase + Stripe SaaS 项目：**
+
+ 上面 1.3 节的完整示例
+
+**通用模板：**
+
+ 适用于任何项目的基础结构，包含项目概述、关键规则、文件结构、命令、Git 工作流
+
+这些模板的共同特点是：**不教 Claude 怎么写代码（它已经知道），而是告诉它这个项目的具体约束和偏好。**
+
+二、上下文工程与 Token 经济学
+
+Claude Code 性能下降的第一大原因不是模型不行，而是上下文窗口被填满了。理解 Token 经济学，是进阶的分水岭。
+
+2.1 理解上下文窗口
+
+把上下文窗口想象成 Claude 的"工作记忆"——它能同时记住的信息量是有限的（约 200K tokens）。当你在一个会话里塞了太多内容——聊了一大堆、读了很多文件、跑了很多命令——Claude 的表现就会明显下降：它开始忘记之前的约定，重复犯已经纠正过的错误，生成的代码质量肉眼可见地降低。
+
+**核心原则：一个会话 = 一个任务。** 功能开发完了就开新会话，不要在同一个会话里做完开发又做审查又做重构。
+
+2.2 Token 优化：你可能在悄悄烧钱
+
+在 `~/.claude/settings.json` 中加入这些设置，能大幅降低 token 消耗：
+
+{  
+"model": "sonnet",  
+"env": {  
+"MAX_THINKING_TOKENS": "10000",  
+"CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50"  
+}  
+}
+
+每个设置的具体效果：
+
+**`model: sonnet`** —— 默认模型从 Opus 切到 Sonnet，成本直降约 60%。Sonnet 在 90% 的日常编码场景下表现和 Opus 没有体感差异，只有在复杂架构设计、跨 5+ 文件的大重构、安全审计这些场景下 Opus 才有明显优势。
+
+**`MAX_THINKING_TOKENS: 10000`** —— Claude 的"内心独白"默认最多 31,999 tokens。大多数任务根本用不到这么多思考空间，把它降到 10,000 可以节省约 70% 的隐性思考成本。如果你发现某个复杂任务质量下降了，可以临时调回来。
+
+**`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: 50`** —— 自动压缩触发阈值从默认的 95% 降到 50%。这意味着上下文用到一半就会触发压缩，而不是快满了才压。好处是长会话的后半段质量更稳定，坏处是压缩更频繁，可能丢掉一些中间推理。
+
+2.3 模型路由：按任务选模型
+
+黑客松冠军仓库的一个核心实践是 **按任务复杂度路由到不同模型** 。他们的经验总结：
+
+| 任务类型 | 推荐模型 | 原因 |
+| --- | --- | --- |
+| 文件搜索、代码探索 | **Haiku** | 速度快、成本低、搜索类任务准确率够用 |
+| 简单编辑、单文件修改 | **Haiku** | 指令明确时 Haiku 完全能胜任 |
+| 多文件实现、日常编码 | **Sonnet** | 90% 场景的最佳平衡点 |
+| 复杂架构设计 | **Opus** | 需要在脑中同时持有整个系统 |
+| PR 审查 | **Sonnet** | 理解上下文够用，能抓到细微问题 |
+| 安全审计 | **Opus** | 安全漏洞不能漏，值得花更多 token |
+| 写文档 | **Haiku** | 结构简单，不需要深度推理 |
+| 复杂调试 | **Opus** | 需要在脑中持有整个系统状态 |
+
+**经验法则** ：日常默认 Sonnet。当出现以下情况时升级到 Opus：第一次尝试失败了、改动跨 5+ 文件、涉及架构决策、安全关键代码。
+
+具体的成本差异（2026 年价格参考）：
+
+| 模型 | 相对成本 |
+| --- | --- |
+| Haiku 4.5 | 1x（基准） |
+| Sonnet 4.6 | ~4x |
+| Opus 4.5 | ~19x |
+
+这意味着一个用 Opus 完成的简单搜索任务，用 Haiku 可以省 19 倍成本。
+
+2.4 MCP 的隐藏成本
+
+这是一个大多数人不知道的坑： **每个启用的 MCP 服务器，它的工具描述都会消耗上下文窗口。** 如果你启用了 20 个 MCP、总共 100+ 个工具，这些工具描述本身就可能占掉你 200K 上下文窗口的 30-40%。
+
+黑客松冠军仓库的实测数据：配置了 14 个 MCP 服务器，但日常只保持 5-6 个启用。他们的建议：
+
+ 全局配置的 MCP 数量不超过 20-30 个
+
+ **同时启用的不超过 10 个**
+
+ 活跃工具总数控制在 80 个以内
+
+ 用 `disabledMcpServers` 按项目禁用不需要的 MCP
+
+**更激进的方案：用 Skills + CLI 替代 MCP**
+
+黑客松冠军仓库的一个重要发现： **大多数 MCP 只是封装了已有的 CLI 工具** （GitHub CLI、Supabase CLI、Vercel CLI 等），但 MCP 带来了额外的上下文开销。
+
+他们的解法是把 MCP 的功能包装成 Skill 或 Command：
+
+## /gh-pr —— 替代 GitHub MCP  
+
+---  
+name: gh-pr  
+description: 创建 GitHub Pull Request  
+---  
+1. 运行 `git diff main...HEAD` 获取所有改动  
+2. 分析改动内容，生成 PR 标题和描述  
+3. 运行 `gh pr create --title "标题" --body "描述"`
+
+他们的实测结果： **CLI + Skills 方案比 MCP 方案节省约 50% 的 token 消耗** ，因为省掉了 MCP 工具描述占用的上下文空间。
+
+当然，并非所有 MCP 都应该被替代。数据库查询、复杂 API 交互、需要持续连接的服务（如 Slack、浏览器控制），MCP 仍然是最好的选择。
+
+2.5 战略性压缩
+
+不要依赖自动压缩。自动压缩在上下文快满时才触发，到那时候已经有大量的低质量推理堆积在上下文里了。
+
+**在以下时机手动 `/compact` ：**
+
+| 阶段转换 | 是否压缩 | 为什么 |
+| --- | --- | --- |
+| 调研 → 规划 | **压缩** | 调研阶段读了大量文件，产生了大量搜索结果，但最终只需要保留结论。计划已经提炼出来了，调研原料可以丢掉。 |
+| 规划 → 实现 | **压缩** | 计划已经存到文件（plan.md）或 TodoWrite 里了，规划过程中的讨论和方案对比不再需要。 |
+| 调试 → 下一个功能 | **压缩** | 调试痕迹（错误日志、各种尝试、堆栈跟踪）会严重污染上下文，影响后续代码生成质量。 |
+| 失败方案 → 新方案 | **压缩** | 死胡同的推理过程不仅没用，还会误导 Claude 往同一个方向走。 |
+| 实现进行中 | **不要压缩** | 正在写代码的时候压缩，会丢失变量名、文件路径、函数签名等关键信息，导致后续代码不一致。 |
+
+**压缩后的信息存活规则：**
+
+ **能保留的** ：CLAUDE.md 指令、TodoWrite 任务列表、磁盘上的文件内容、Git 状态
+
+ **会丢失的** ：中间推理过程、读过的文件内容、工具调用历史、口头表达的偏好
+
+**进阶：在 CLAUDE.md 里写自定义压缩指令**
+
+## Compact Instructions  
+
+使用 /compact 时，保留：  
+- 所有架构决策和 API 变更  
+- 测试命令和测试结果  
+- 已修改的文件列表和关键 diff  
+丢弃：  
+- 冗长的日志输出  
+- 探索性搜索的死胡同  
+- 文件读取的原始内容（可以重新读）
+
+**定向压缩** ——你还可以在 `/compact` 后面加上具体指令：
+
+/compact 只保留 API 变更记录和测试结果
+
+Claude 会按你的指令有选择地压缩，而不是一刀切。
+
+2.6 会话管理
+
+把会话当成 Git 分支来管理——一个功能一个会话，命名要有意义：
+
+## 给会话起名  
+
+/rename oauth-migration  
+
+## 继续上次的会话  
+
+claude --continue  
+
+## 恢复指定会话  
+
+claude --resume oauth-migration  
+
+## 浏览所有会话（按 P 预览内容）  
+
+claude --resume
+
+**会话持久化技巧** （来自黑客松冠军仓库）：
+
+在长任务中，每完成一个阶段就创建一个 `.tmp` 文件来保存进度：
+
+`#.claude/session-checkpoint.tmp`  
+
+### 已完成  
+
+- [x] 分析了现有认证系统的架构  
+- [x] 设计了从 JWT 迁移到 Session 的方案  
+
+### 当前进度  
+
+- 正在实现 Session 中间件（完成了 60%）  
+- src/middleware/session.ts 已创建  
+- 还需要：session 过期处理、并发登录控制  
+
+### 关键决策  
+
+- 选择 Redis 存储 session，因为需要跨实例共享  
+- 保留 JWT 作为 API 认证，Session 只用于 Web 端  
+
+### 下次继续时  
+
+- 从 session 过期处理开始  
+- 参考 src/middleware/auth.ts 的现有模式
+
+即使上下文被压缩或会话断开，下次回来 Claude 读了这个文件就能无缝接续。
+
+三、Plan Mode 与质量驱动开发
+
+如果你从这篇文章只学一个技巧，让它是 Plan Mode。
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/SovmyhibInPGEBPhicBKBicNicZjVwicL3M5FOB3BuFAPjUH37LtL6cLC9jDYWedWaibCC8T1vpJaQw2hg9yvu94kUcCCo6RF7TcJYHWOElJiaia6uM/640?from=appmsg&watermark=1&tp=webp&wxfrom=5&wx_lazy=1#imgIndex=0)
+
+Plan Mode 蓝图模式
+
+3.1 为什么需要 Plan Mode
+
+没有 Plan Mode 的工作流：
+
+你："帮我重构认证模块"  
+Claude：（立刻开始改代码，凭经验猜你要什么）  
+你：（30 分钟后）"不是这样的，我想的是..."  
+Claude：（重新开始改，但上下文已经被第一次尝试填满了）  
+结果：浪费时间、浪费 token、代码质量差
+
+有 Plan Mode 的工作流：
+
+你："帮我重构认证模块"  
+Claude：（进入只读模式：读代码、分析依赖、搜索相关文件、设计方案）  
+Claude："这是我的方案：  
+1. 抽取 Session 中间件...  
+2. 迁移 token 验证逻辑...  
+3. 添加 Redis session 存储...  
+你觉得怎么样？"  
+你："第二点改一下，其他 OK"  
+Claude：（按确认的方案高效执行，不走弯路）  
+结果：方向对、效率高、上下文干净
+
+**区别的本质** ：Plan Mode 把"思考"和"执行"分开了。思考阶段 Claude 只读不写，确保理解了问题再动手。
+
+3.2 使用方法
+
+三种进入 Plan Mode 的方式：
+
+**方法一：** 按 `Shift+Tab` 切换到 Plan Mode（再按切回来）。这是最快的方式。
+
+**方法二：** 在提示中明确说明：
+
+进入 Plan Mode，先分析这个项目的认证系统，  
+设计一个从 JWT 迁移到 Session 的方案。  
+不要动代码，先出方案让我确认。
+
+**方法三：** 在 CLAUDE.md 里设为默认行为：
+
+## 默认使用 Plan Mode  
+
+对于任何非 trivial 的改动（涉及 3 个以上文件，或架构变更），  
+先进入 Plan Mode 分析，输出方案让我确认后再执行。
+
+3.3 Ctrl+G：直接编辑 Claude 的计划
+
+这是一个很多人不知道的隐藏功能： **按 `Ctrl+G` 可以在外部编辑器中打开 Claude 的计划** ，直接修改后保存，Claude 会按你修改后的计划继续执行。
+
+这比在聊天框里一条条反馈快得多——你可以直接删掉不需要的步骤、调整顺序、添加遗漏的细节、修改技术方案。
+
+3.4 双 Claude 互审
+
+Boris Cherny 团队的杀手级技巧——用两个 Claude 相互审查：
+
+1.**Claude A** ：在 Plan Mode 下设计技术方案
+
+2.**Claude B** （新会话）：扮演 Staff Engineer 审查方案
+
+3.审查反馈交给 Claude A 修改
+
+4.方案通过后才开始实际编码
+
+给 Claude B 的提示：
+
+你是一个 Staff Engineer，审查以下技术方案。  
+重点关注：  
+- 架构合理性：是否有更简单的方案？  
+- 边界情况：哪些场景没考虑到？  
+- 性能风险：并发、缓存、数据量增长后的表现？  
+- 可维护性：半年后还能不能看懂？  
+不要客气，直接指出问题。  
+  
+[粘贴方案]
+
+这样做的好处是： **审查者没有"沉没成本"** ——它没写过这段代码，所以不会偏向于维护它。一个新鲜的视角更容易发现盲点。
+
+3.5 Eval-Driven Development（EDD）
+
+这是黑客松冠军仓库的核心开发方法论—— **在写代码之前先定义评估标准** 。
+
+传统 TDD 是"先写测试再写代码"，EDD 更进一步：先定义"什么算成功"的评估标准，然后开发，最后用标准来验证。
+
+**EDD 工作流：**
+
+第一步：定义 Eval（写代码之前）  
+↓  
+第二步：实现功能  
+↓  
+第三步：运行 Eval，验证是否达标  
+↓  
+第四步：生成报告，记录通过率
+
+**定义 Eval 的格式：**
+
+[CAPABILITY EVAL: user-authentication]  
+Task: 实现用户认证系统  
+Success Criteria:  
+- [ ] 用户可以注册（邮箱 + 密码）  
+- [ ] 密码使用 bcrypt 哈希存储  
+- [ ] 登录返回 JWT token  
+- [ ] token 过期时间可配置  
+- [ ] 无效 token 返回 401  
+- [ ] 并发登录不会互相干扰  
+Expected Output: 所有测试通过 + 安全审查通过
+
+**三种 Eval Grader：**
+
+| 类型 | 评判方式 | 适用场景 |
+| --- | --- | --- |
+| **Code-based** | 确定性检查（grep、测试通过、构建成功） | 功能正确性 |
+| **Model-based** | 用 Claude 评估（创意、代码质量、方案合理性） | 开放性任务 |
+| **Human** | 标记为需要人工审查 | 关键决策、安全相关 |
+
+**两个关键指标：**
+
+**pass@k（至少一次成功）：** k 次尝试中至少有 1 次成功的概率。用于评估"这个方案能不能行"。
+
+| 单次通过率 | pass@1 | pass@3 | pass@5 |
+| --- | --- | --- | --- |
+| 70% | 70% | 91% | 97% |
+
+**pass^k（全部成功）：** k 次尝试全部成功的概率。用于评估"这个方案是否稳定可靠"。
+
+| 单次通过率 | pass^1 | pass^3 | pass^5 |
+| --- | --- | --- | --- |
+| 70% | 70% | 34% | 17% |
+
+**用 pass@k 当你只需要它能工作。用 pass^k 当你需要它每次都能工作。**
+
+这个区分非常实用：如果一个功能 pass@3 = 91% 但 pass^3 = 34%，说明它能做到但不稳定——可能需要更好的 prompt 或更多的约束条件。
+
+3.6 Verification Loop：六阶段验证
+
+黑客松冠军仓库的另一个核心实践——每次代码改动后跑一遍六阶段验证：
+
+阶段 1：构建验证 → npm run build / cargo build  
+阶段 2：类型检查 → tsc --noEmit / pyright  
+阶段 3：Lint 检查 → eslint / ruff  
+阶段 4：测试套件 → 测试通过 + 覆盖率 > 80%  
+阶段 5：安全扫描 → 检查硬编码密钥、console.log、敏感信息  
+阶段 6：Diff 审查 → git diff 确认没有意外改动
+
+每个阶段输出 PASS 或 FAIL，最终汇总为"READY for PR"或"NOT READY for PR"。
+
+你可以把这个验证流程做成一个 Skill：
+
+---  
+name: verify  
+description: 运行完整的六阶段验证  
+---  
+  
+按顺序执行以下验证：  
+  
+1. **构建验证**：运行项目构建命令，确保无错误  
+2. **类型检查**：运行类型检查器，确保无类型错误  
+3. **Lint 检查**：运行 linter，确保无违规  
+4. **测试套件**：运行测试，确保全部通过且覆盖率达标  
+5. **安全扫描**：  
+- grep 检查是否有硬编码的密钥或 token  
+- 检查是否有 console.log 残留  
+- 检查是否有敏感文件被修改（.env,.key,.pem）  
+6. **Diff 审查**：  
+- 运行 git diff 查看所有改动  
+- 确认每个改动都是预期的  
+- 检查是否有意外修改的文件  
+  
+输出格式：  
+| 阶段 | 状态 | 详情 |  
+|------|------|------|  
+| 构建 | PASS/FAIL |... |  
+| 类型 | PASS/FAIL |... |  
+|... |... |... |  
+  
+最终结论：READY / NOT READY for PR
+
+四、Skills 与 Hooks：定制你的 Claude
+
+Skills 和 Hooks 是 Claude Code 最能体现"操作系统"特性的两个功能。Skills 让 Claude 学会新技能，Hooks 让 Claude 具备自动化行为。
+
+![图片](https://mp.weixin.qq.com/s/www.w3.org/2000/svg'%20xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Ctitle%3E%3C/title%3E%3Cg%20stroke='none'%20stroke-width='1'%20fill='none'%20fill-rule='evenodd'%20fill-opacity='0'%3E%3Cg%20transform='translate(-249.000000,%20-126.000000)'%20fill='%23FFFFFF'%3E%3Crect%20x='249'%20y='126'%20width='1'%20height='1'%3E%3C/rect%3E%3C/g%3E%3C/g%3E%3C/svg%3E)
+
+Hooks 生命周期
+
+4.1 Skills：给 Claude 安装新技能
+
+Skills 是放在 `.claude/skills/` 目录下的 Markdown 文件，每个 Skill 就是一套专属的指令集。你可以把反复执行的工作流固化成 Skill，以后一句 `/技能名` 就能触发。
+
+**目录结构要求** ：每个 Skill 必须是一个目录，入口文件必须叫 `SKILL.md` （大写）：
+
+.claude/skills/  
+├── code-review/  
+│ └── SKILL.md # /code-review 触发  
+├── tdd-workflow/  
+│ └── SKILL.md # /tdd-workflow 触发  
+└── security-scan/  
+└── SKILL.md # /security-scan 触发
+
+**创建一个代码审查 Skill：**
+
+---  
+name: code-review  
+description: 对当前分支的改动进行全面代码审查  
+---  
+
+## 代码审查  
+
+### 步骤  
+
+1. 运行 `git diff main...HEAD` 获取所有改动  
+2. 按文件逐一审查，关注：  
+- **安全漏洞**：注入、XSS、敏感信息泄露、权限绕过  
+- **性能问题**：N+1 查询、不必要的重渲染、内存泄漏  
+- **错误处理**：未捕获的异常、缺失的边界检查  
+- **代码风格**：是否符合项目规范  
+3. 只报告置信度 > 80% 的问题，忽略风格偏好  
+4. 生成审查报告，按严重程度分级：  
+- CRITICAL：必须修复，不修不能合并  
+- WARNING：建议修复  
+- INFO：可以改进  
+  
+输出格式：按文件分组，每个问题包含文件路径、行号、问题描述、修复建议。  
+最后输出一个总结表格：CRITICAL x 个，WARNING x 个，INFO x 个。
+
+保存后，在 Claude Code 里输入 `/code-review` 就能触发。
+
+4.2 Skill 的高级配置
+
+---  
+name: heavy-analysis  
+description: 大型代码库分析  
+context: fork # 在独立子代理中运行，不污染主上下文  
+agent: explore # 使用 explore 类型代理  
+allowed-tools: Read, Grep, Glob # 限制工具权限，只能读不能写  
+user-invocable: true # 可以通过 /heavy-analysis 调用  
+argument-hint: [目录路径] # 输入提示  
+---
+
+`context: fork` 是一个关键配置——它让 Skill 在独立的子代理中运行，不会污染你的主上下文窗口。对于需要大量文件读取的分析类任务（比如扫描 1000+ 文件的代码库），这个配置能避免主会话的上下文被撑爆。
+
+4.3 黑客松冠军仓库的 53 个 Skills
+
+黑客松冠军仓库包含 53 个 Skills，覆盖了开发的方方面面。这里挑几个最有启发性的：
+
+**`/search-first` —— 先搜索再写码**
+
+在动手写代码之前，先搜索是否已有现成的解决方案。这个 Skill 会依次搜索 npm/PyPI 包、MCP 工具、GitHub 仓库，避免重复造轮子。
+
+**`/skill-stocktake` —— 审计所有 Skills 的质量**
+
+定期审计已安装的 Skills，检查它们是否过时、是否有重复、是否仍然有用。输出四种判定：Keep（保留）、Improve（改进）、Update（更新）、Retire（退役）。
+
+**`/cost-aware-llm-pipeline` —— 成本感知的 LLM 管线**
+
+按任务复杂度自动路由到不同模型，内置预算追踪和提示缓存：
+
+## 核心模式：不可变成本记录  
+
+@dataclass(frozen=True, slots=True)  
+class CostRecord:  
+model: str  
+input_tokens: int  
+output_tokens: int  
+cost_usd: float  
+
+## 超过 1024 tokens 的系统提示自动启用缓存  
+
+## 只重试瞬态错误（超时、速率限制），认证/参数错误直接失败
+
+**`/regex-vs-llm` —— 混合解析策略**
+
+能用正则解决的就不用 LLM。正则处理 95-98% 的常规情况，只把低置信度的边缘 case 交给 LLM，减少约 95% 的 LLM 调用。
+
+4.4 Hooks：给 Claude 装上自动驾驶
+
+Hooks 是 Claude Code 最被低估的功能。它们是"事件触发器"——当 Claude 准备执行某个操作时，Hook 可以在它之前或之后自动运行你指定的逻辑。
+
+配置在 `settings.json` 的 `hooks` 字段中。
+
+**为什么 Hooks 比在 CLAUDE.md 里写规则更可靠？**
+
+黑客松冠军仓库的一个核心洞察： **"LLM 忘记遵守指令的概率约 20%。但 Hook 在工具层面强制执行，100% 触发。"**
+
+比如你在 CLAUDE.md 里写"编辑完代码后必须跑 Prettier"，Claude 有 20% 的概率忘记。但如果你把它做成 PostToolUse Hook，每次 Edit/Write 工具执行后都会自动触发，不存在忘记的可能。
+
+**这就是 Hooks 的本质价值：把"希望 Claude 记住"变成"系统层面强制执行"。**
+
+4.5 所有可用的 Hook 事件
+
+| 事件 | 触发时机 | 能做什么 |
+| --- | --- | --- |
+| `PreToolUse` | 工具执行 **前** | 拦截危险操作（exit code 2 = 阻断）、修改参数、添加提醒 |
+| `PostToolUse` | 工具执行 **后** | 自动格式化、类型检查、质量检测 |
+| `UserPromptSubmit` | 用户按回车 **前** | 注入额外上下文、敏感词检测 |
+| `Stop` | Claude 要停下来时 | 检查任务是否真的完成了、强制继续 |
+| `SessionStart` | 会话开始时 | 加载上次的进度、初始化环境 |
+| `PreCompact` | 上下文压缩前 | 保存关键状态到文件 |
+| `Notification` | 系统通知时 | 权限请求处理、空闲提醒 |
+
+4.6 实战 Hook 案例
+
+**案例一：自动格式化（PostToolUse）**
+
+每次 Claude 编辑完 JS/TS 文件，自动跑 Prettier：
+
+{  
+"hooks": {  
+"PostToolUse": [  
+{  
+"matcher": "Edit|Write",  
+"hooks": [  
+{  
+"type": "command",  
+"command": "npx prettier --write $CLAUDE_FILE_PATH 2>/dev/null || true"  
+}  
+]  
+}  
+]  
+}  
+}
+
+**案例二：阻止写入敏感文件（PreToolUse）**
+
+{  
+"hooks": {  
+"PreToolUse": [  
+{  
+"matcher": "Write|Edit",  
+"hooks": [  
+{  
+"type": "command",  
+"command": "echo $CLAUDE_TOOL_INPUT | python -c "import sys,json; p=json.load(sys.stdin).get('file_path',''); exit(2 if any(p.endswith(e) for e in ['.env','.key','.pem']) else 0)""  
+}  
+]  
+}  
+]  
+}  
+}
+
+`exit(2)` 是关键——退出码 2 表示"阻断操作"，Claude 会收到错误反馈并停止该操作。退出码 0 = 放行，退出码 1 = 警告但不阻断。
+
+**案例三：TypeScript 类型检查（PostToolUse）**
+
+每次编辑完 `.ts` / `.tsx` 文件自动跑类型检查：
+
+{  
+"hooks": {  
+"PostToolUse": [  
+{  
+"matcher": "Edit",  
+"hooks": [  
+{  
+"type": "command",  
+"command": "if echo $CLAUDE_FILE_PATH | grep -qE '.(ts|tsx)$'; then npx tsc --noEmit 2>&1 | head -20; fi"  
+}  
+]  
+}  
+]  
+}  
+}
+
+**案例四：tmux 长命令提醒（PreToolUse）**
+
+在 Bash 工具执行前检查是否在 tmux 中，对于可能运行很久的命令给出提醒：
+
+{  
+"hooks": {  
+"PreToolUse": [  
+{  
+"matcher": "Bash",  
+"hooks": [  
+{  
+"type": "command",  
+"command": "if [ -z "$TMUX" ]; then echo 'WARNING: Not in tmux. Long-running commands may be interrupted.'; fi"  
+}  
+]  
+}  
+]  
+}  
+}
+
+**案例五：Prompt 级智能钩子（Stop）**
+
+Hooks 不只能跑 bash 脚本，还能用 LLM 做智能判断：
+
+{  
+"hooks": {  
+"Stop": [  
+{  
+"hooks": [  
+{  
+"type": "prompt",  
+"prompt": "检查任务状态。如果有未完成的任务或者测试没通过，输出 JSON {"continue": true, "systemMessage": "还有未完成的工作，请继续"}。否则允许停止。",  
+"model": "claude-haiku-4-5-20251001"  
+}  
+]  
+}  
+]  
+}  
+}
+
+这个 Hook 在 Claude 想停下来的时候，用一个小模型快速判断任务是否真的完成了。如果没完成，强制它继续。注意用 Haiku 模型来执行这个判断——成本低、速度快。
+
+**案例六：记忆持久化 Hooks**
+
+黑客松冠军仓库的一套完整的记忆持久化方案，由三个 Hook 组成：
+
+{  
+"hooks": {  
+"PreCompact": [  
+{  
+"hooks": [  
+{  
+"type": "command",  
+"command": "node scripts/hooks/pre-compact.js"  
+}  
+]  
+}  
+],  
+"SessionStart": [  
+{  
+"hooks": [  
+{  
+"type": "command",  
+"command": "node scripts/hooks/session-start.js"  
+}  
+]  
+}  
+],  
+"Stop": [  
+{  
+"hooks": [  
+{  
+"type": "command",  
+"command": "node scripts/hooks/session-end.js"  
+}  
+]  
+}  
+]  
+}  
+}
+
+ **SessionStart** ：会话开始时加载上次的进度文件，检测包管理器类型
+
+ **PreCompact** ：压缩前把关键状态保存到文件
+
+ **Stop** ：会话结束时持久化本次的学习成果
+
+4.7 持续学习系统
+
+这是黑客松冠军仓库最有创意的实践之一——让 Claude 从每次会话中自动学习，把发现的模式固化为新的规则。
+
+**V1 版本：基于 Stop Hook 的模式提取**
+
+会话结束时，Stop Hook 触发一个脚本，分析本次会话中 Claude 的行为模式（用户纠正了什么、哪些方案失败了、哪些模式被重复使用），然后把提取到的模式写入 `~/.claude/skills/learned/` 目录。
+
+问题是 Stop Hook 的触发率只有 50-80%（Claude 有时会以不同方式结束会话）。
+
+**V2 版本（Instinct-Based）：基于 PreToolUse/PostToolUse 的观测**
+
+V2 彻底解决了触发率问题——用 Hook（而非 Skill）来观测 Claude 的行为， **100% 触发** 。
+
+核心概念是" **Instinct（本能）** "——原子级的行为模式，每个 Instinct 只有一个触发条件和一个动作：
+
+---  
+id: prefer-functional-style  
+trigger: "when writing new functions"  
+confidence: 0.7  
+domain: "code-style"  
+source: "session-observation"  
+---  
+
+## 偏好函数式风格  
+
+### Action  
+
+使用函数式模式（map/filter/reduce），而非 class 和 for 循环。
+
+**Instinct 的置信度会动态变化：**
+
+ 模式被重复观测到 → 置信度上升
+
+ 用户纠正了这个行为 → 置信度下降
+
+ 长期没有观测到 → 置信度衰减
+
+当 3 个以上相关的 Instinct 聚集到一起，系统会自动把它们合并成一个 Skill 或 Command。
+
+**这意味着什么？** Claude 用得越多，越懂你的偏好。它会自动记住你喜欢函数式还是 OOP、喜欢 2 空格还是 4 空格、喜欢 commit 用英文还是中文——而且这些记忆有置信度评分，不是死板的规则。
+
+4.8 高级 Hook 架构
+
+Boris 团队的一个成员把权限请求通过 Hook 路由给 Opus 模型，让 AI 自动做安全扫描和审批。安全的操作自动放行，危险的操作自动拒绝。团队称这是"用 AI 来管 AI"。
+
+黑客松冠军仓库的另一个高阶用法： **PostToolUse Hook 检测 console.log** 。每次编辑完文件，自动检查是否引入了新的 `console.log` ，如果有就发出警告。这个 Hook 配合 Stop Hook（检查所有修改的文件中是否有 console.log 残留），形成双重保障。
+
+{  
+"PostToolUse": [  
+{  
+"matcher": "Edit",  
+"hooks": [  
+{  
+"type": "command",  
+"command": "node scripts/hooks/post-edit-console-warn.js"  
+}  
+]  
+}  
+]  
+}
+
+五、多代理架构与并行开发
+
+一个 Claude 能做的事情有限——但 5 个 Claude 分工协作，就能处理一个团队级别的任务。
+
+![图片](https://mp.weixin.qq.com/s/www.w3.org/2000/svg'%20xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Ctitle%3E%3C/title%3E%3Cg%20stroke='none'%20stroke-width='1'%20fill='none'%20fill-rule='evenodd'%20fill-opacity='0'%3E%3Cg%20transform='translate(-249.000000,%20-126.000000)'%20fill='%23FFFFFF'%3E%3Crect%20x='249'%20y='126'%20width='1'%20height='1'%3E%3C/rect%3E%3C/g%3E%3C/g%3E%3C/svg%3E)
+
+Subagents 团队协作工作流
+
+5.1 Subagents：Claude 的"分身术"
+
+Subagents 解决两个核心问题：
+
+**上下文污染** ：你让 Claude 去研究一个大型代码库的认证系统，它读了 50 个文件后，你的上下文窗口就被填满了，后续工作效率直线下降。
+
+**串行瓶颈** ：一次只做一件事，太慢了。三个独立的审查任务，串行做要 15 分钟，并行做只要 5 分钟。
+
+Subagents 的解法：把任务委派给独立的子代理，它们有自己的上下文窗口，完成后只返回精简的结果给主会话。
+
+**隐式调用** ——直接告诉 Claude 用子代理：
+
+用 subagent 分析一下我们的认证系统是怎么处理 token 刷新的。
+
+**并行调用** ——同时启动多个子代理：
+
+帮我做一次全面的代码审查，用三个并行的子代理：  
+1. 一个审查安全漏洞  
+2. 一个检查性能问题  
+3. 一个检查测试覆盖率  
+最后汇总三份报告。
+
+Claude 会同时 spawn 三个子代理，各自独立工作，最后汇总结果。
+
+5.2 自定义 Agent
+
+在 `.claude/agents/` 目录下创建 Markdown 文件来定义专业化的 Agent。黑客松冠军仓库定义了 14 个 Agent，覆盖了开发全链路：
+
+| Agent | 模型 | 工具权限 | 职责 |
+| --- | --- | --- | --- |
+| **architect** | Opus | Read, Grep, Glob（只读） | 系统架构设计、技术决策、ADR 文档 |
+| **planner** | Opus | Read, Grep, Glob（只读） | 任务分解、实现计划、风险评估 |
+| **code-reviewer** | Sonnet | Read, Grep, Glob, Bash | 代码审查、只报告 > 80% 置信度的问题 |
+| **security-reviewer** | Sonnet | Read, Write, Edit, Bash, Grep, Glob | OWASP Top 10 安全审查 |
+| **database-reviewer** | Sonnet | 同上 | 查询优化、Schema 设计、RLS 策略 |
+| **tdd-guide** | Sonnet | Read, Write, Edit, Bash, Grep | 强制 TDD 流程，先写测试再写码 |
+| **build-error-resolver** | Sonnet | 同上 | 构建错误修复，最小化改动 |
+| **refactor-cleaner** | Sonnet | 同上 | 死代码清理、依赖整合 |
+| **e2e-runner** | Sonnet | 同上 | E2E 测试编写和维护 |
+| **doc-updater** | **Haiku** | 同上 | 文档生成和更新（成本敏感） |
+| **chief-of-staff** | Opus | 全部 | 多渠道通讯协调（邮件/Slack） |
+
+注意模型选择的逻辑：
+
+ **架构和规划** 用 Opus（需要深度推理）
+
+ **代码审查和实现** 用 Sonnet（性价比最优）
+
+ **文档生成** 用 Haiku（结构简单，省钱）
+
+**创建一个 Agent 的示例：**
+
+5.3 迭代检索模式
+
+子代理返回的结果有时不够好。因为它缺乏主会话的语义上下文——它只知道你的字面查询，不知道你的真正目的。
+
+**解法：迭代追问，最多 3 轮。**
+
+DISPATCH（广泛查询）→ EVALUATE（评分相关性）→ REFINE（更新条件）→ LOOP（最多 3 轮）
+
+关键是传给子代理的不只是"查询"，还要传"目的"：
+
+**差的做法：** "搜索认证相关代码"
+
+**好的做法：** "我要把 JWT 迁移到 Session。搜索所有需要改动的认证代码，包括中间件、token 验证、刷新逻辑、注销逻辑"
+
+第一次返回后，主会话评估结果是否充分。如果缺少某些维度的信息，再追问具体的问题。最多三轮，避免无限循环。
+
+5.4 编排流水线
+
+把子代理串联成流水线，每个阶段有明确的输入和输出：
+
+**关键规则：**
+
+1.每个 Agent 一个输入，一个输出
+
+2.输出就是下一阶段的输入
+
+3.不要跳过阶段
+
+4.阶段之间用 `/clear` 清除上下文
+
+5.中间产物存到文件（.md），不要全放在上下文里
+
+这个模式的价值在于：每个 Agent 只需要关注自己阶段的信息，不会被前面阶段的大量细节干扰。
+
+5.5 Git Worktree：真正的并行开发
+
+如果你开两个 Claude Code 会话指向同一个项目目录，灾难就来了——它们会互相覆盖对方的修改。
+
+**Git Worktree** 让你从同一个仓库创建多个独立的工作目录，每个目录有自己的分支和文件状态，但共享 Git 历史：
+
+**Claude Code 原生 Worktree 支持：**
+
+## 启动时直接创建  
+
+claude --worktree feature-auth  
+
+## 或者在会话中输入  
+
+work in a worktree
+
+Claude 会在 `.claude/worktrees/` 下创建独立目录，自动管理分支。
+
+5.6 两实例启动模式
+
+黑客松冠军仓库推荐的新项目启动方式——同时开两个 Claude 实例：
+
+**实例 1：Scaffolding Agent（脚手架）**
+
+ 搭建项目结构
+
+ 创建配置文件（CLAUDE.md、rules、agents）
+
+ 初始化依赖和工具链
+
+**实例 2：Deep Research Agent（深度调研）**
+
+ 连接外部服务、搜索文档
+
+ 创建详细的 PRD（产品需求文档）
+
+ 生成架构 Mermaid 图
+
+ 收集实际文档片段作为参考
+
+两个实例并行工作，Research Agent 完成后把输出文件（PRD、架构图）交给 Scaffolding Agent 参考，大幅缩短项目启动时间。
+
+5.7 Cascade Method
+
+同时管理多个 Claude 实例时的任务管理方法：
+
+1.新任务在 **右侧** 打开新 tab
+
+2.从 **左到右** 扫描，最左边是最旧的任务
+
+3.同时关注的任务不超过 **3-4 个**
+
+4.完成一个关掉一个，持续扫描
+
+配合 `Ctrl+T` 查看全局任务列表、 `/rename` 给每个会话起名、给不同 worktree 的终端标签设置不同颜色。
+
+5.8 Agent Teams（实验性）
+
+Agent Teams 是 Claude Code 最前沿的功能——多个 Claude 实例组成团队，可以互相发消息、辩论、协作。
+
+**与 Subagents 的区别：**
+
+| 维度 | Subagents | Agent Teams |
+| --- | --- | --- |
+| 通信方式 | 只返回结果 | 可以互相发消息、辩论 |
+| 成本 | 较低 | 较高（每个 agent 独立计费） |
+| 适用场景 | 独立子任务 | 需要协作和讨论的复杂任务 |
+| 稳定性 | 稳定 | 实验性功能 |
+
+**启用方式：**
+
+{  
+"env": {  
+"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"  
+}  
+}
+
+**杀手级用法：竞争假说调试法**
+
+遇到诡异的 bug？同时 spawn 5 个 agent，每个调查不同的假说：
+
+启动 5 个 agent 分别调查这个 bug 的不同可能原因：  
+1. Agent A：检查是不是数据库连接池耗尽  
+2. Agent B：检查是不是内存泄漏  
+3. Agent C：检查是不是并发竞态条件  
+4. Agent D：检查是不是外部 API 超时  
+5. Agent E：检查是不是配置问题  
+  
+让它们互相讨论，尝试推翻对方的假说。  
+存活下来的假说最可能是真正的原因。
+
+**团队规模指南：**
+
+ 最佳规模：3-5 个队友
+
+ 每人任务量：5-6 个任务
+
+ 铁律： **三个专注的队友 > 五个分散的队友**
+
+ 告诉 Team Lead："等你的队友完成任务后再继续"，否则它可能自己抢活干
+
+下篇预告
+
+上篇我们讲了 Claude Code 的核心体系——从 CLAUDE.md 记忆系统到多代理并行开发。下篇将进入更硬核的领域：
+
+ **无头模式** ：让 Claude 在后台批量处理、接入 CI/CD 管线
+
+ **MCP 与 Plugins** ：连接外部工具、LSP 实时代码智能
+
+ **安全工程** ：攻击面分析、AgentShield 扫描、供应链防护——大多数人完全忽略的关键领域
+
+ **速查手册** ：所有快捷键、命令、CLI 参数一张表搞定
+
+作者提示: 个人观点，仅供参考
+
+继续滑动看下一个
+
+星空作手
+
+向上滑动看下一个
+
+剪存为飞书云文档

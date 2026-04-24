@@ -3,8 +3,10 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   lang: "zh-Hans",
-  title: "liguwe.site",
-  description: "liguwe 的 Obsidian 知识库与个人博客",
+  /** 部署于 https://liguwe.site/pre-34.5/ */
+  base: "/pre-34.5/",
+  title: "pre-v34.5",
+  description: "liguwe 的 Obsidian 知识库与个人博客（pre-v34.5 归档站点）",
   cleanUrls: true,
   rewrites: (id) =>
     id.startsWith("obsidian/") ? id.slice("obsidian/".length) : id,

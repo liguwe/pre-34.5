@@ -1,7 +1,7 @@
 {
-  "name": "liguwe.github.io",
+  "name": "pre-v34.5",
   "version": "1.0.0",
-  "description": "liguwe's github page blog",
+  "description": "liguwe 站点 pre-v34.5 归档（liguwe.github.io，GitHub Pages + liguwe.site/pre-34.5）",
   "main": "index.js",
   "repository": "git@github.com:liguwe/liguwe.github.io.git",
   "author": "liguwe@qq.com",

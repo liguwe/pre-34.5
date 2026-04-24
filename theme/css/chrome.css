@@ -90,6 +90,27 @@ html.sidebar-visible #menu-bar {
 .right-buttons a {
     text-decoration: none;
 }
+.right-buttons .repo-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-inline-end: 10px;
+    color: var(--icons);
+    font-size: 1.9rem;
+    transition:
+        color 0.15s,
+        background-color 0.15s;
+}
+#menu-bar .right-buttons .repo-link i {
+    padding: 0;
+    line-height: 1;
+}
+.right-buttons .repo-link:hover {
+    color: var(--icons-hover);
+    background-color: var(--theme-hover);
+}
 .right-buttons .forward-link {
     display: inline-flex;
     align-items: center;

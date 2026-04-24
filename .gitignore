@@ -1,5 +1,7 @@
 .idea
 node_modules
-.idea
 book
 .env.json
+docs/.vitepress/dist
+docs/.vitepress/cache
+.pnpm-store

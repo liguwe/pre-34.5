@@ -7,13 +7,18 @@
   "author": "liguwe@qq.com",
   "license": "MIT",
   "scripts": {
-    "dev": "sh ./server.sh"
+    "clean": "rm -rf docs/obsidian docs/notes docs/.vitepress/generated docs/.vitepress/dist",
+    "generate": "node make.js",
+    "dev": "pnpm generate && vitepress dev docs --port 7100",
+    "build": "pnpm generate && vitepress build docs",
+    "preview": "vitepress preview docs --port 7100"
   },
   "dependencies": {
-    "directory-tree": "^3.5.1",
-    "dotenv": "^16.4.7",
-    "gray-matter": "^4.0.3",
-    "p-limit": "^6.2.0",
-    "uuid": "^9.0.1"
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "tailwindcss": "^4.1.17",
+    "vitepress": "^1.6.4"
   }
 }

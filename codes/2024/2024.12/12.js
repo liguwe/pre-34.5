@@ -1,2 +1,0 @@
-use;
-console.log(this);

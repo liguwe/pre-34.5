@@ -28,21 +28,19 @@ jobs:
       - name: Build Book
         run: |
           mdbook build
-      - name: Layout for /pre-34.5 on liguwe.site
+      - name: Fix project-page absolute links
         run: |
-          mkdir -p out/pre-34.5
-          cp -a book/. out/pre-34.5/
-          # CNAME 必须在站点根，自定义域名才生效
-          if [ -f out/pre-34.5/CNAME ]; then
-            mv out/pre-34.5/CNAME out/CNAME
-          fi
-          touch out/.nojekyll
+          find book -name "*.html" -type f -print0 \
+            | xargs -0 perl -pi -e 's#(href|src)="/post/#$1="/pre-34.5/post/#g'
+      - name: Disable Jekyll
+        run: |
+          touch book/.nojekyll
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "out"
+          path: "book"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

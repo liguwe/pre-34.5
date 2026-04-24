@@ -1,5 +1,7 @@
 # liguwe's site
 
+**pre-34.5** 代表 34.5 岁之前。AI 时代，写作和博客的方式都发生了改变，这里只做一个存档。
+
 基于 [mdBook](https://github.com/rust-lang/mdBook) 的静态知识库。推送到 `master` 时由 [GitHub Actions](.github/workflows/deploy.yml) 构建并发布到 [GitHub Pages](https://pages.github.com/)。
 
 ## 在线访问

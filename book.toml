@@ -11,6 +11,8 @@ description = "832 之书，liguwe.github.io,liguwe.site,liguwe's blog,liguwe's 
 create-missing = false
 
 [output.html]
+# 与 GitHub Pages 发布子目录一致，资源与内部链接会基于此前缀生成
+site-url = "https://liguwe.site/pre-34.5/"
 smart-punctuation = true
 mathjax-support = true
 git-repository-url = "https://github.com/liguwe"

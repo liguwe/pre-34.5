@@ -27,16 +27,22 @@ jobs:
           echo `pwd`/installed-bins >> $GITHUB_PATH
       - name: Build Book
         run: |
-          # This assumes your book is in the root of your repository.
-          # Just add a `cd` here if you need to change to another directory.
           mdbook build
+      - name: Layout for /pre-34.5 on liguwe.site
+        run: |
+          mkdir -p out/pre-34.5
+          cp -a book/. out/pre-34.5/
+          # CNAME 必须在站点根，自定义域名才生效
+          if [ -f out/pre-34.5/CNAME ]; then
+            mv out/pre-34.5/CNAME out/CNAME
+          fi
+          touch out/.nojekyll
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: "book"
+          path: "out"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

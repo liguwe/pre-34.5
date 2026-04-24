@@ -25,3 +25,5 @@ pnpm run dev
 ## 更多
 
 [https://liguwe.site](https://liguwe.site)
+
+<!-- last deploy: 2026-04-25 -->

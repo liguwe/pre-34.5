@@ -83,10 +83,49 @@ html.sidebar-visible #menu-bar {
 }
 
 .right-buttons {
-    margin: 0 15px;
+    display: flex;
+    align-items: center;
+    margin: 0 18px;
 }
 .right-buttons a {
     text-decoration: none;
+}
+.right-buttons .forward-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--icons);
+    border-radius: 999px;
+    color: var(--icons);
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1;
+    transition:
+        border-color 0.15s,
+        color 0.15s,
+        background-color 0.15s;
+}
+#menu-bar .right-buttons .forward-link i {
+    padding: 0;
+    line-height: 1;
+}
+.right-buttons .forward-link:hover {
+    border-color: var(--icons-hover);
+    color: var(--icons-hover);
+    background-color: var(--theme-hover);
+}
+
+@media only screen and (max-width: 420px) {
+    .right-buttons {
+        margin: 0 8px;
+    }
+    .right-buttons .forward-link {
+        padding: 0 10px;
+        font-size: 1.5rem;
+    }
 }
 
 .left-buttons {

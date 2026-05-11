@@ -4,7 +4,7 @@ language = "zh-Hans"
 multilingual = false
 create-missing = false
 src = "src"
-title = "既往不恋（止于 2026.04.25 01:20｜34.5 / 37）"
+title = "既往不恋（止于 2026.04.25 01:20）"
 description = "832 之书，liguwe.github.io,liguwe.site,liguwe's blog,liguwe's notes,liguwe's wiki,liguwe's site，liguwe's book，liguwe's blog , liguwe's books，Guangwei Li's Book，liguwe's blog，liguwe's book，liguwe's site， Guangwei Li's site ，Guangwei Li's Books， Guangwei Li's blog，李广卫, 李广卫的知识库、 李广卫的博客、李广卫的个人网站、李广卫的站点"
 
 [build]
